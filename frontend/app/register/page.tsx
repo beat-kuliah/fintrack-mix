@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, Rocket, Check, X } from 'lucide-react'
+import { Mail, Lock, User, AtSign, Rocket, Check, X } from 'lucide-react'
 import AuthLayout from '@/components/layout/AuthLayout'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     full_name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -44,6 +45,17 @@ export default function RegisterPage() {
       return false
     } else if (formData.full_name.length < 2) {
       toast.error('Nama minimal 2 karakter')
+      return false
+    }
+
+    if (!formData.username) {
+      toast.error('Username wajib diisi')
+      return false
+    } else if (formData.username.length < 3) {
+      toast.error('Username minimal 3 karakter')
+      return false
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+      toast.error('Username hanya boleh huruf, angka, underscore (_), atau strip (-)')
       return false
     }
 
@@ -88,13 +100,14 @@ export default function RegisterPage() {
     try {
       const response = await apiClient.register({
         full_name: formData.full_name,
+        username: formData.username,
         email: formData.email,
         password: formData.password,
       })
       
       // After registration, login automatically
       const loginResponse = await apiClient.login({
-        email: formData.email,
+        username_or_email: formData.email,
         password: formData.password,
       })
       
@@ -132,6 +145,17 @@ export default function RegisterPage() {
           value={formData.full_name}
           onChange={handleChange}
           icon={<User size={20} />}
+          required
+        />
+
+        <Input
+          label="Username"
+          type="text"
+          name="username"
+          placeholder="username_unik"
+          value={formData.username}
+          onChange={handleChange}
+          icon={<AtSign size={20} />}
           required
         />
 

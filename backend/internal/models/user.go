@@ -9,6 +9,7 @@ import (
 type User struct {
 	ID           uuid.UUID `db:"id" json:"id"`
 	Email        string    `db:"email" json:"email"`
+	Username     *string   `db:"username" json:"username"`
 	PasswordHash string    `db:"password_hash" json:"-"`
 	FullName     string    `db:"full_name" json:"full_name"`
 	IsAdmin      bool      `db:"is_admin" json:"is_admin"`
@@ -18,13 +19,14 @@ type User struct {
 
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required,min=3,max=50"`
 	Password string `json:"password" binding:"required,min=6"`
 	FullName string `json:"full_name" binding:"required"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	UsernameOrEmail string `json:"username_or_email" binding:"required"`
+	Password        string `json:"password" binding:"required"`
 }
 
 type LoginResponse struct {

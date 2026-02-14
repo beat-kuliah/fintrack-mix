@@ -26,7 +26,7 @@ export default function DashboardPage() {
     try {
       setIsLoading(true)
       const response = await apiClient.getTransactions({ limit: 10 })
-      setTransactions(response)
+      setTransactions(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error('Error fetching transactions:', error)
     } finally {
@@ -39,7 +39,7 @@ export default function DashboardPage() {
       setIsChartsLoading(true)
       // For now, we'll calculate from transactions
       // TODO: Implement proper monthly stats and category breakdown endpoints
-      const allTransactions = await apiClient.getTransactions()
+      const allTransactions = (await apiClient.getTransactions()) ?? []
       
       // Calculate monthly data
       const monthlyMap = new Map<string, { month: number; year: number; income: number; expense: number }>()
@@ -115,11 +115,12 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         {(() => {
-          const totalIncome = transactions
+          const txList = transactions ?? []
+          const totalIncome = txList
             .filter(t => t.type === 'income')
             .reduce((sum, t) => sum + t.amount, 0)
 
-          const totalExpense = transactions
+          const totalExpense = txList
             .filter(t => t.type === 'expense')
             .reduce((sum, t) => sum + t.amount, 0)
 
@@ -280,7 +281,7 @@ export default function DashboardPage() {
             <h2 className="text-base sm:text-lg font-semibold text-light-800 dark:text-dark-100">
               Recent Transactions
             </h2>
-            {transactions.length > 0 && (
+            {(transactions ?? []).length > 0 && (
               <button
                 onClick={() => router.push('/dashboard/transactions')}
                 className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
@@ -299,7 +300,7 @@ export default function DashboardPage() {
                 Loading transactions...
               </p>
             </div>
-          ) : transactions.length === 0 ? (
+          ) : (transactions ?? []).length === 0 ? (
             <div className="text-center py-8 sm:py-12 lg:py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-light-100 dark:bg-dark-800 flex items-center justify-center">
                 <ArrowLeftRight className="w-8 h-8 text-light-400 dark:text-dark-600" />
@@ -319,7 +320,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {transactions.slice(0, 5).map((transaction) => {
+              {(transactions ?? []).slice(0, 5).map((transaction) => {
                 const isIncome = transaction.type === 'income'
                 const formatCurrency = (amount: number) => {
                   return new Intl.NumberFormat('id-ID', {

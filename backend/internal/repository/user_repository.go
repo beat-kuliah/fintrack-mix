@@ -24,10 +24,10 @@ func (r *UserRepository) Create(user *models.User) error {
 	user.UpdatedAt = time.Now()
 
 	query := `
-		INSERT INTO users (id, email, password_hash, full_name, is_admin, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (id, email, username, password_hash, full_name, is_admin, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
-	_, err := r.db.Exec(query, user.ID, user.Email, user.PasswordHash, user.FullName, user.IsAdmin, user.CreatedAt, user.UpdatedAt)
+	_, err := r.db.Exec(query, user.ID, user.Email, user.Username, user.PasswordHash, user.FullName, user.IsAdmin, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -37,7 +37,7 @@ func (r *UserRepository) Create(user *models.User) error {
 
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, email, password_hash, full_name, is_admin, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, email, username, password_hash, full_name, is_admin, created_at, updated_at FROM users WHERE email = $1`
 	err := r.db.Get(&user, query, email)
 	if err != nil {
 		return nil, err
@@ -45,9 +45,29 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
+func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
+	var user models.User
+	query := `SELECT id, email, username, password_hash, full_name, is_admin, created_at, updated_at FROM users WHERE username = $1`
+	err := r.db.Get(&user, query, username)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) GetByEmailOrUsername(usernameOrEmail string) (*models.User, error) {
+	// Try email first
+	user, err := r.GetByEmail(usernameOrEmail)
+	if err == nil {
+		return user, nil
+	}
+	// Try username
+	return r.GetByUsername(usernameOrEmail)
+}
+
 func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, email, password_hash, full_name, is_admin, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, email, username, password_hash, full_name, is_admin, created_at, updated_at FROM users WHERE id = $1`
 	err := r.db.Get(&user, query, id)
 	if err != nil {
 		return nil, err
@@ -59,7 +79,7 @@ func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
 
 func (r *UserRepository) GetAll() ([]models.User, error) {
 	var users []models.User
-	query := `SELECT id, email, full_name, is_admin, created_at, updated_at FROM users ORDER BY created_at DESC`
+	query := `SELECT id, email, username, full_name, is_admin, created_at, updated_at FROM users ORDER BY created_at DESC`
 	err := r.db.Select(&users, query)
 	if err != nil {
 		return nil, err

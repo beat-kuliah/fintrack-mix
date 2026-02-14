@@ -28,10 +28,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Check if user exists
+	// Check if email exists
 	_, err := h.userRepo.GetByEmail(req.Email)
 	if err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		return
+	}
+
+	// Check if username exists
+	_, err = h.userRepo.GetByUsername(req.Username)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already taken"})
 		return
 	}
 
@@ -42,9 +49,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	username := req.Username
 	// Create user
 	user := &models.User{
 		Email:        req.Email,
+		Username:     &username,
 		PasswordHash: string(hashedPassword),
 		FullName:     req.FullName,
 	}
@@ -64,8 +73,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Get user
-	user, err := h.userRepo.GetByEmail(req.Email)
+	// Get user by email or username
+	user, err := h.userRepo.GetByEmailOrUsername(req.UsernameOrEmail)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return

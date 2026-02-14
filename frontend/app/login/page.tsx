@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, Sparkles } from 'lucide-react'
+import { User, Lock, Sparkles } from 'lucide-react'
 import AuthLayout from '@/components/layout/AuthLayout'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const toast = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    email: '',
+    username_or_email: '',
     password: '',
   })
 
@@ -47,13 +47,8 @@ export default function LoginPage() {
   }
 
   const validateForm = () => {
-    if (!formData.email) {
-      toast.error('Email wajib diisi')
-      return false
-    }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error('Format email tidak valid')
+    if (!formData.username_or_email) {
+      toast.error('Username atau email wajib diisi')
       return false
     }
     
@@ -76,7 +71,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const response = await apiClient.login({
-        email: formData.email,
+        username_or_email: formData.username_or_email,
         password: formData.password,
       })
       
@@ -107,13 +102,13 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
         <Input
-          label="Email"
-          type="email"
-          name="email"
-          placeholder="email@example.com"
-          value={formData.email}
+          label="Username atau Email"
+          type="text"
+          name="username_or_email"
+          placeholder="username atau email@example.com"
+          value={formData.username_or_email}
           onChange={handleChange}
-          icon={<Mail size={20} />}
+          icon={<User size={20} />}
           required
         />
 

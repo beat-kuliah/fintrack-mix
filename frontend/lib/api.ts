@@ -3,12 +3,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 // Types
 export interface LoginRequest {
-  email: string;
+  username_or_email: string;
   password: string;
 }
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
   full_name: string;
 }
@@ -16,6 +17,7 @@ export interface RegisterRequest {
 export interface User {
   id: string;
   email: string;
+  username?: string | null;
   full_name: string;
   is_admin: boolean;
   created_at: string;
