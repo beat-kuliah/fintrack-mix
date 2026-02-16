@@ -52,6 +52,20 @@ export default function AddWalletModal({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Map frontend wallet types to backend account types
+  const mapWalletTypeToBackend = (walletType: string): 'bank' | 'wallet' | 'cash' | 'paylater' => {
+    const typeMap: Record<string, 'bank' | 'wallet' | 'cash' | 'paylater'> = {
+      'cash': 'cash',
+      'bank': 'bank',
+      'card': 'wallet',
+      'credit-card': 'paylater',
+      'paylater': 'paylater',
+      'e-wallet': 'wallet',
+      'other': 'wallet',
+    }
+    return typeMap[walletType] || 'wallet'
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -59,8 +73,10 @@ export default function AddWalletModal({
     try {
       await apiClient.createAccount({
         name: formData.name,
-        type: formData.wallet_type as 'bank' | 'wallet' | 'cash' | 'paylater',
+        type: mapWalletTypeToBackend(formData.wallet_type),
         currency: formData.currency,
+        icon: formData.icon,
+        color: formData.color,
       })
 
       // Reset form
@@ -127,7 +143,16 @@ export default function AddWalletModal({
               <button
                 key={type.value}
                 type="button"
-                onClick={() => setFormData({ ...formData, wallet_type: type.value })}
+                onClick={() => {
+                  // Set default icon and color when wallet type is selected
+                  const defaultColorIndex = walletTypes.findIndex(t => t.value === type.value) % defaultColors.length
+                  setFormData({ 
+                    ...formData, 
+                    wallet_type: type.value,
+                    icon: type.icon,
+                    color: defaultColors[defaultColorIndex]
+                  })
+                }}
                 className={`
                   p-3 rounded-lg border-2 transition-all duration-200
                   ${formData.wallet_type === type.value

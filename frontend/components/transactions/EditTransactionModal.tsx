@@ -5,7 +5,7 @@ import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { ArrowUpRight, ArrowDownRight, Calendar, Tag, ChevronDown, Wallet } from 'lucide-react'
-import { apiClient, Transaction, Wallet as WalletType } from '@/lib/api'
+import { apiClient, Transaction, Wallet as WalletType, Budget } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
 interface EditTransactionModalProps {
@@ -34,6 +34,8 @@ export default function EditTransactionModal({
   const [isLoadingWallets, setIsLoadingWallets] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [budgetCategories, setBudgetCategories] = useState<string[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
   const fetchWallets = useCallback(async () => {
     try {
@@ -49,12 +51,43 @@ export default function EditTransactionModal({
     }
   }, [])
 
-  // Fetch wallets when modal opens
+  // Fetch budget categories for expense transactions
+  const fetchBudgetCategories = useCallback(async () => {
+    if (formData.type !== 'expense') return
+    
+    try {
+      setIsLoadingCategories(true)
+      const transactionDate = formData.date ? new Date(formData.date) : new Date()
+      const month = transactionDate.getMonth() + 1
+      const year = transactionDate.getFullYear()
+      
+      const budgets = await apiClient.getBudgets({ month, year })
+      const categories = budgets.map(b => b.category).filter((cat, index, self) => self.indexOf(cat) === index)
+      setBudgetCategories(categories)
+    } catch (error) {
+      console.error('Error fetching budget categories:', error)
+      setBudgetCategories([])
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }, [formData.type, formData.date])
+
+  // Fetch wallets and budget categories when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchWallets()
+      if (formData.type === 'expense') {
+        fetchBudgetCategories()
+      }
     }
-  }, [isOpen, fetchWallets])
+  }, [isOpen, fetchWallets, formData.type, fetchBudgetCategories])
+  
+  // Re-fetch budget categories when date or type changes
+  useEffect(() => {
+    if (isOpen && formData.type === 'expense' && formData.date) {
+      fetchBudgetCategories()
+    }
+  }, [formData.date, formData.type, isOpen, fetchBudgetCategories])
 
   // Load transaction data when modal opens
   useEffect(() => {
@@ -112,9 +145,18 @@ export default function EditTransactionModal({
     })
   }
 
+  // Build categories: for expense, combine budget categories with defaults
+  const defaultExpenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+  const defaultIncomeCategories = ['Initial', 'Salary', 'Freelance', 'Investment', 'Bonus', 'Other']
+  
   const categories = formData.type === 'income'
-    ? ['Salary', 'Freelance', 'Investment', 'Bonus', 'Other']
-    : ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+    ? defaultIncomeCategories
+    : (() => {
+        // Combine budget categories with defaults, remove duplicates, prioritize budget categories
+        const combined = [...budgetCategories, ...defaultExpenseCategories]
+        const unique = combined.filter((cat, index, self) => self.indexOf(cat) === index)
+        return unique
+      })()
 
   if (!transaction) return null
 
@@ -234,11 +276,24 @@ export default function EditTransactionModal({
                 className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3.5 text-sm sm:text-base bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700 rounded-lg sm:rounded-xl text-light-900 dark:text-dark-50 transition-all duration-300 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 focus:bg-white dark:focus:bg-dark-800 hover:border-light-400 dark:hover:border-dark-600 appearance-none cursor-pointer"
               >
                 <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
+                {formData.type === 'expense' && budgetCategories.length > 0 && (
+                  <optgroup label="💰 Budget Categories">
+                    {budgetCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label={formData.type === 'expense' ? '📋 Default Categories' : 'Categories'}>
+                  {(formData.type === 'expense' ? defaultExpenseCategories : defaultIncomeCategories)
+                    .filter(cat => formData.type === 'expense' ? !budgetCategories.includes(cat) : true)
+                    .map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                </optgroup>
               </select>
               <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-light-500 dark:text-dark-400 pointer-events-none">
                 <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />

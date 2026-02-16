@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Wallet, AlertCircle, CheckCircle2, TrendingDown, Plus, Loader2, Trash2 } from 'lucide-react'
+import { Wallet, AlertCircle, CheckCircle2, TrendingDown, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import { apiClient, Budget, Transaction } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
@@ -16,6 +16,7 @@ export default function BudgetingPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [expandedBudgets, setExpandedBudgets] = useState<Set<string>>(new Set())
   const toast = useToast()
 
   const fetchData = async () => {
@@ -269,11 +270,26 @@ export default function BudgetingPage() {
           ) : (
             <div className="space-y-4">
               {budgets.map((budget) => {
-                const categoryExpenses = transactions
+                const categoryTransactions = transactions
                   .filter(t => t.type === 'expense' && t.category === budget.category)
+                const categoryExpenses = categoryTransactions
                   .reduce((sum, t) => sum + t.amount, 0)
                 const categoryPercentage = budget.amount > 0 ? (categoryExpenses / budget.amount) * 100 : 0
                 const isOverCategoryBudget = categoryExpenses > budget.amount
+                const isExpanded = expandedBudgets.has(budget.id)
+                
+                const formatDate = (dateString: string) => {
+                  try {
+                    const date = new Date(dateString)
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    const day = date.getDate()
+                    const month = months[date.getMonth()]
+                    const year = date.getFullYear()
+                    return `${day} ${month} ${year}`
+                  } catch {
+                    return dateString
+                  }
+                }
                 
                 return (
                   <div
@@ -288,24 +304,50 @@ export default function BudgetingPage() {
                         <div className="flex items-center gap-4 text-xs text-light-500 dark:text-dark-500">
                           <span>Budget: {formatCurrency(budget.amount)}</span>
                           <span>Spent: {formatCurrency(categoryExpenses)}</span>
+                          <span className="text-light-400 dark:text-dark-600">
+                            ({categoryTransactions.length} {categoryTransactions.length === 1 ? 'transaksi' : 'transaksi'})
+                          </span>
                         </div>
                       </div>
-                      <button
-                        onClick={async () => {
-                          if (confirm('Hapus budget ini?')) {
-                            try {
-                              await apiClient.deleteBudget(budget.id)
-                              toast.success('Budget berhasil dihapus!')
-                              fetchData()
-                            } catch (error: any) {
-                              toast.error(error.message || 'Gagal menghapus budget')
+                      <div className="flex items-center gap-2">
+                        {categoryTransactions.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedBudgets)
+                              if (isExpanded) {
+                                newExpanded.delete(budget.id)
+                              } else {
+                                newExpanded.add(budget.id)
+                              }
+                              setExpandedBudgets(newExpanded)
+                            }}
+                            className="p-2 rounded-lg text-light-600 dark:text-dark-400 hover:bg-light-100 dark:hover:bg-dark-800 transition-all"
+                            title={isExpanded ? 'Sembunyikan transaksi' : 'Lihat transaksi'}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (confirm('Hapus budget ini?')) {
+                              try {
+                                await apiClient.deleteBudget(budget.id)
+                                toast.success('Budget berhasil dihapus!')
+                                fetchData()
+                              } catch (error: any) {
+                                toast.error(error.message || 'Gagal menghapus budget')
+                              }
                             }
-                          }
-                        }}
-                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                          }}
+                          className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="w-full h-2 bg-light-200 dark:bg-dark-700 rounded-full overflow-hidden mb-2">
                       <div
@@ -329,6 +371,48 @@ export default function BudgetingPage() {
                       {categoryPercentage.toFixed(1)}% used
                       {isOverCategoryBudget && ` (${formatCurrency(categoryExpenses - budget.amount)} over)`}
                     </p>
+                    
+                    {/* Expanded Transactions List */}
+                    {isExpanded && categoryTransactions.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-light-200 dark:border-dark-700">
+                        <h4 className="text-sm font-semibold text-light-700 dark:text-dark-300 mb-3">
+                          Transaksi untuk kategori ini:
+                        </h4>
+                        <div className="space-y-2">
+                          {categoryTransactions.map((transaction) => (
+                            <div
+                              key={transaction.id}
+                              className="flex items-center justify-between p-3 rounded-lg bg-light-50 dark:bg-dark-900/50 border border-light-200 dark:border-dark-800"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-light-800 dark:text-dark-100 truncate">
+                                  {transaction.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="flex items-center gap-1 text-xs text-light-500 dark:text-dark-500">
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDate(transaction.transaction_date)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                  -{formatCurrency(transaction.amount)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isExpanded && categoryTransactions.length === 0 && (
+                      <div className="mt-4 pt-4 border-t border-light-200 dark:border-dark-700">
+                        <p className="text-sm text-light-500 dark:text-dark-500 text-center py-4">
+                          Belum ada transaksi untuk kategori ini pada bulan yang dipilih.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )
               })}

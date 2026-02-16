@@ -22,6 +22,8 @@ type Account struct {
 	Type            AccountType `db:"type" json:"type"`
 	Balance         float64     `db:"balance" json:"balance"`
 	Currency        string      `db:"currency" json:"currency"`
+	Icon            string      `db:"icon" json:"icon"`
+	Color           string      `db:"color" json:"color"`
 	ParentAccountID *uuid.UUID  `db:"parent_account_id" json:"parent_account_id,omitempty"`
 	CreatedAt       time.Time   `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time   `db:"updated_at" json:"updated_at"`
@@ -33,6 +35,8 @@ type CreateAccountRequest struct {
 	Name            string      `json:"name" binding:"required"`
 	Type            AccountType `json:"type" binding:"required"`
 	Currency        string      `json:"currency"`
+	Icon            string      `json:"icon"`
+	Color           string      `json:"color"`
 	ParentAccountID *uuid.UUID  `json:"parent_account_id,omitempty"`
 }
 
@@ -44,4 +48,6 @@ type CreateSubAccountRequest struct {
 type UpdateAccountRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Currency string `json:"currency"`
+	Icon     string `json:"icon"`
+	Color    string `json:"color"`
 }

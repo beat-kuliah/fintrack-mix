@@ -141,6 +141,8 @@ class ApiClient {
     name: string;
     type: 'bank' | 'wallet' | 'cash' | 'paylater';
     currency?: string;
+    icon?: string;
+    color?: string;
     parent_account_id?: string;
   }): Promise<Account> {
     return this.request<Account>('/api/accounts', {
@@ -158,6 +160,8 @@ class ApiClient {
   async updateAccount(id: string, data: {
     name: string;
     currency?: string;
+    icon?: string;
+    color?: string;
   }): Promise<Account> {
     return this.request<Account>(`/api/accounts/${id}`, {
       method: 'PUT',
@@ -374,6 +378,8 @@ export interface Account {
   type: 'bank' | 'wallet' | 'cash' | 'paylater';
   balance: number;
   currency: string;
+  icon?: string;
+  color?: string;
   parent_account_id?: string;
   created_at: string;
   updated_at: string;

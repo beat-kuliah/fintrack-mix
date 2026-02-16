@@ -6,7 +6,7 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { ArrowUpRight, ArrowDownRight, Calendar, Tag, Wallet, ChevronDown } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
-import { apiClient, Account } from '@/lib/api'
+import { apiClient, Account, Budget } from '@/lib/api'
 
 interface AddTransactionModalProps {
   isOpen: boolean
@@ -32,6 +32,8 @@ export default function AddTransactionModal({
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [budgetCategories, setBudgetCategories] = useState<string[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -49,12 +51,43 @@ export default function AddTransactionModal({
     }
   }, [])
 
-  // Fetch accounts when modal opens
+  // Fetch budget categories for expense transactions
+  const fetchBudgetCategories = useCallback(async () => {
+    if (type !== 'expense') return
+    
+    try {
+      setIsLoadingCategories(true)
+      const transactionDate = formData.date ? new Date(formData.date) : new Date()
+      const month = transactionDate.getMonth() + 1
+      const year = transactionDate.getFullYear()
+      
+      const budgets = await apiClient.getBudgets({ month, year })
+      const categories = budgets.map(b => b.category).filter((cat, index, self) => self.indexOf(cat) === index)
+      setBudgetCategories(categories)
+    } catch (error) {
+      console.error('Error fetching budget categories:', error)
+      setBudgetCategories([])
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }, [type, formData.date])
+
+  // Fetch accounts and budget categories when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchAccounts()
+      if (type === 'expense') {
+        fetchBudgetCategories()
+      }
     }
-  }, [isOpen, fetchAccounts])
+  }, [isOpen, fetchAccounts, type, fetchBudgetCategories])
+  
+  // Re-fetch budget categories when date changes (for expense)
+  useEffect(() => {
+    if (isOpen && type === 'expense' && formData.date) {
+      fetchBudgetCategories()
+    }
+  }, [formData.date, isOpen, type, fetchBudgetCategories])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,9 +138,19 @@ export default function AddTransactionModal({
     })
   }
 
+  // Build categories: for expense, combine budget categories with defaults
+  // For income, use default categories
+  const defaultExpenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+  const defaultIncomeCategories = ['Initial', 'Salary', 'Freelance', 'Investment', 'Bonus', 'Other']
+  
   const categories = type === 'income'
-    ? ['Salary', 'Freelance', 'Investment', 'Bonus', 'Other']
-    : ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
+    ? defaultIncomeCategories
+    : (() => {
+        // Combine budget categories with defaults, remove duplicates, prioritize budget categories
+        const combined = [...budgetCategories, ...defaultExpenseCategories]
+        const unique = combined.filter((cat, index, self) => self.indexOf(cat) === index)
+        return unique
+      })()
 
   return (
     <Modal
@@ -209,11 +252,24 @@ export default function AddTransactionModal({
               className="w-full pl-10 pr-4 py-2.5 sm:py-3.5 text-sm sm:text-base bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700 rounded-lg sm:rounded-xl text-light-900 dark:text-dark-50 transition-all duration-300 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 focus:bg-white dark:focus:bg-dark-800 hover:border-light-400 dark:hover:border-dark-600"
             >
               <option value="">Select category</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
+              {type === 'expense' && budgetCategories.length > 0 && (
+                <optgroup label="💰 Budget Categories">
+                  {budgetCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label={type === 'expense' ? '📋 Default Categories' : 'Categories'}>
+                {(type === 'expense' ? defaultExpenseCategories : defaultIncomeCategories)
+                  .filter(cat => type === 'expense' ? !budgetCategories.includes(cat) : true)
+                  .map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+              </optgroup>
             </select>
           </div>
         </div>

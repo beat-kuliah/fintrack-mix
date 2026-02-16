@@ -24,10 +24,10 @@ func (r *AccountRepository) Create(account *models.Account) error {
 	account.Balance = 0 // Always start with 0 balance
 
 	query := `
-		INSERT INTO accounts (id, user_id, name, type, balance, currency, parent_account_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO accounts (id, user_id, name, type, balance, currency, icon, color, parent_account_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
-	_, err := r.db.Exec(query, account.ID, account.UserID, account.Name, account.Type, account.Balance, account.Currency, account.ParentAccountID, account.CreatedAt, account.UpdatedAt)
+	_, err := r.db.Exec(query, account.ID, account.UserID, account.Name, account.Type, account.Balance, account.Currency, account.Icon, account.Color, account.ParentAccountID, account.CreatedAt, account.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create account: %w", err)
 	}
@@ -38,7 +38,7 @@ func (r *AccountRepository) Create(account *models.Account) error {
 // GetByUserID returns all main accounts (no parent) with their sub-accounts
 func (r *AccountRepository) GetByUserID(userID uuid.UUID) ([]models.Account, error) {
 	var allAccounts []models.Account
-	query := `SELECT id, user_id, name, type, balance, currency, parent_account_id, created_at, updated_at FROM accounts WHERE user_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, user_id, name, type, balance, currency, icon, color, parent_account_id, created_at, updated_at FROM accounts WHERE user_id = $1 ORDER BY created_at DESC`
 	err := r.db.Select(&allAccounts, query, userID)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (r *AccountRepository) GetByUserID(userID uuid.UUID) ([]models.Account, err
 // GetSubAccounts returns all sub-accounts for a parent account
 func (r *AccountRepository) GetSubAccounts(parentID uuid.UUID) ([]models.Account, error) {
 	var accounts []models.Account
-	query := `SELECT id, user_id, name, type, balance, currency, parent_account_id, created_at, updated_at FROM accounts WHERE parent_account_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, user_id, name, type, balance, currency, icon, color, parent_account_id, created_at, updated_at FROM accounts WHERE parent_account_id = $1 ORDER BY created_at DESC`
 	err := r.db.Select(&accounts, query, parentID)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (r *AccountRepository) GetSubAccounts(parentID uuid.UUID) ([]models.Account
 
 func (r *AccountRepository) GetByID(id uuid.UUID) (*models.Account, error) {
 	var account models.Account
-	query := `SELECT id, user_id, name, type, balance, currency, parent_account_id, created_at, updated_at FROM accounts WHERE id = $1`
+	query := `SELECT id, user_id, name, type, balance, currency, icon, color, parent_account_id, created_at, updated_at FROM accounts WHERE id = $1`
 	err := r.db.Get(&account, query, id)
 	if err != nil {
 		return nil, err
@@ -96,8 +96,8 @@ func (r *AccountRepository) GetByID(id uuid.UUID) (*models.Account, error) {
 
 func (r *AccountRepository) Update(account *models.Account) error {
 	account.UpdatedAt = time.Now()
-	query := `UPDATE accounts SET name = $1, balance = $2, currency = $3, updated_at = $4 WHERE id = $5`
-	_, err := r.db.Exec(query, account.Name, account.Balance, account.Currency, account.UpdatedAt, account.ID)
+	query := `UPDATE accounts SET name = $1, balance = $2, currency = $3, icon = $4, color = $5, updated_at = $6 WHERE id = $7`
+	_, err := r.db.Exec(query, account.Name, account.Balance, account.Currency, account.Icon, account.Color, account.UpdatedAt, account.ID)
 	return err
 }
 

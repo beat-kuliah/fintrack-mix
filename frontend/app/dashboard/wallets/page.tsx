@@ -154,16 +154,27 @@ export default function WalletsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {accounts.map((account) => {
+                const accountColor = account.color || '#3b82f6'
                 return (
                 <div
                   key={account.id}
-                  className="rounded-xl p-4 sm:p-6 border border-light-200 dark:border-dark-800 transition-all duration-200 hover:shadow-lg relative group overflow-hidden glass-light"
+                  className="rounded-xl p-4 sm:p-6 transition-all duration-200 hover:shadow-lg relative group overflow-hidden glass-light"
+                  style={{
+                    border: `2px solid ${accountColor}40`,
+                    backgroundColor: `${accountColor}15`,
+                  }}
                 >
                   {/* Account Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary-500/10 dark:bg-primary-500/20 flex items-center justify-center text-2xl">
-                        💳
+                      <div 
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm"
+                        style={{ 
+                          backgroundColor: `${accountColor}30`,
+                          border: `2px solid ${accountColor}60`,
+                        }}
+                      >
+                        {account.icon || '💳'}
                       </div>
                       <div>
                         <h3 className="text-base sm:text-lg font-semibold text-light-800 dark:text-dark-100">
@@ -181,20 +192,38 @@ export default function WalletsPage() {
                     <p className="text-xs text-light-500 dark:text-dark-500 mb-1">
                       Balance
                     </p>
-                    <p className={`text-xl sm:text-2xl font-bold ${
-                      account.balance < 0
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-light-800 dark:text-dark-100'
-                    }`}>
+                    <p 
+                      className="text-xl sm:text-2xl font-bold"
+                      style={{
+                        color: account.balance < 0 
+                          ? '#ef4444' 
+                          : accountColor
+                      }}
+                    >
                       {formatCurrency(account.balance, account.currency)}
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 pt-4 border-t border-light-200 dark:border-dark-800">
+                  <div 
+                    className="flex items-center gap-2 pt-4 border-t rounded-b-lg"
+                    style={{
+                      borderColor: `${accountColor}30`,
+                    }}
+                  >
                     <button
                       onClick={() => handleEdit(account)}
-                      className="flex-1 px-3 py-2 text-xs sm:text-sm font-medium text-light-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-light-100 dark:hover:bg-dark-800 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5"
+                      className="flex-1 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5"
+                      style={{
+                        color: accountColor,
+                        backgroundColor: `${accountColor}10`,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = `${accountColor}20`
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = `${accountColor}10`
+                      }}
                     >
                       <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       Edit

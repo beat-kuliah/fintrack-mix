@@ -24,17 +24,37 @@ func (h *AccountHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Validate account type
+	validTypes := map[models.AccountType]bool{
+		models.AccountTypeBank:    true,
+		models.AccountTypeWallet:  true,
+		models.AccountTypeCash:    true,
+		models.AccountTypePaylater: true,
+	}
+	if !validTypes[req.Type] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account type. Must be one of: bank, wallet, cash, paylater"})
+		return
+	}
+
 	userID, _ := c.Get("user_id")
 	account := &models.Account{
 		UserID:          userID.(uuid.UUID),
 		Name:            req.Name,
 		Type:            req.Type,
 		Currency:        req.Currency,
+		Icon:            req.Icon,
+		Color:           req.Color,
 		ParentAccountID: req.ParentAccountID,
 	}
 
 	if account.Currency == "" {
 		account.Currency = "IDR"
+	}
+	if account.Icon == "" {
+		account.Icon = "💳"
+	}
+	if account.Color == "" {
+		account.Color = "#3b82f6"
 	}
 
 	if err := h.accountRepo.Create(account); err != nil {
@@ -109,6 +129,20 @@ func (h *AccountHandler) Update(c *gin.Context) {
 	account.Name = req.Name
 	if req.Currency != "" {
 		account.Currency = req.Currency
+	}
+	// Always update icon - use provided value or default if empty
+	if req.Icon != "" {
+		account.Icon = req.Icon
+	} else {
+		// If icon is empty in request, set default (but still update it)
+		account.Icon = "💳"
+	}
+	// Always update color - use provided value or default if empty
+	if req.Color != "" {
+		account.Color = req.Color
+	} else {
+		// If color is empty in request, set default (but still update it)
+		account.Color = "#3b82f6"
 	}
 
 	if err := h.accountRepo.Update(account); err != nil {

@@ -26,14 +26,30 @@ export default function EditWalletModal({
   const [formData, setFormData] = useState({
     name: '',
     currency: 'IDR',
+    icon: '💳',
+    color: '#3b82f6',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const defaultIcons = ['💵', '🏦', '💳', '📱', '💰', '💎', '🎯', '⭐']
+  const defaultColors = [
+    '#22c55e', // green
+    '#3b82f6', // blue
+    '#8b5cf6', // purple
+    '#f59e0b', // amber
+    '#ef4444', // red
+    '#ec4899', // pink
+    '#06b6d4', // cyan
+    '#14b8a6', // teal
+  ]
 
   useEffect(() => {
     if (wallet) {
       setFormData({
         name: wallet.name,
         currency: wallet.currency || 'IDR',
+        icon: wallet.icon || '💳',
+        color: wallet.color || '#3b82f6',
       })
     }
   }, [wallet])
@@ -48,6 +64,8 @@ export default function EditWalletModal({
       await apiClient.updateAccount(wallet.id, {
         name: formData.name,
         currency: formData.currency,
+        icon: formData.icon,
+        color: formData.color,
       })
 
 
@@ -127,6 +145,56 @@ export default function EditWalletModal({
           <p className="text-xs text-light-500 dark:text-dark-500 mt-1">
             Pilih mata uang untuk account ini
           </p>
+        </div>
+
+        {/* Icon */}
+        <div>
+          <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
+            Icon
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {defaultIcons.map((icon) => (
+              <button
+                key={icon}
+                type="button"
+                onClick={() => setFormData({ ...formData, icon })}
+                className={`
+                  w-10 h-10 rounded-lg text-xl flex items-center justify-center
+                  transition-all duration-200
+                  ${formData.icon === icon
+                    ? 'bg-primary-500 text-white scale-110'
+                    : 'bg-light-100 dark:bg-dark-800/50 hover:bg-light-200 dark:hover:bg-dark-700'
+                  }
+                `}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color */}
+        <div>
+          <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
+            Color
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {defaultColors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setFormData({ ...formData, color })}
+                className={`
+                  w-10 h-10 rounded-lg transition-all duration-200
+                  ${formData.color === color
+                    ? 'ring-2 ring-offset-2 ring-primary-500 scale-110'
+                    : 'hover:scale-105'
+                  }
+                `}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Balance Info - Read Only */}
