@@ -66,10 +66,23 @@ export default function WalletsPage() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+  const formatCurrency = (amount: number, currency: string = 'IDR') => {
+    // Map currency to locale
+    const localeMap: Record<string, string> = {
+      'IDR': 'id-ID',
+      'USD': 'en-US',
+      'EUR': 'de-DE',
+      'GBP': 'en-GB',
+      'SGD': 'en-SG',
+      'MYR': 'ms-MY',
+      'JPY': 'ja-JP',
+      'CNY': 'zh-CN',
+    }
+    const locale = localeMap[currency] || 'en-US'
+    
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'IDR',
+      currency: currency,
       minimumFractionDigits: 0,
     }).format(amount)
   }
@@ -173,7 +186,7 @@ export default function WalletsPage() {
                         ? 'text-red-600 dark:text-red-400'
                         : 'text-light-800 dark:text-dark-100'
                     }`}>
-                      {formatCurrency(account.balance)}
+                      {formatCurrency(account.balance, account.currency)}
                     </p>
                   </div>
 

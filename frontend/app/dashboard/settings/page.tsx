@@ -59,15 +59,6 @@ export default function SettingsPage() {
               Preferences
             </h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-light-200 dark:border-dark-800">
-                <div>
-                  <p className="text-sm font-medium text-light-800 dark:text-dark-100">Currency</p>
-                  <p className="text-xs text-light-500 dark:text-dark-500">Set your default currency</p>
-                </div>
-                <button className="px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                  IDR →
-                </button>
-              </div>
               <div className="flex items-center justify-between py-3">
                 <div>
                   <p className="text-sm font-medium text-light-800 dark:text-dark-100">Date Format</p>

@@ -155,6 +155,16 @@ class ApiClient {
     });
   }
 
+  async updateAccount(id: string, data: {
+    name: string;
+    currency?: string;
+  }): Promise<Account> {
+    return this.request<Account>(`/api/accounts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async deleteAccount(id: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/api/accounts/${id}`, {
       method: 'DELETE',

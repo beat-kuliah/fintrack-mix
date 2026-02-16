@@ -6,36 +6,15 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { Wallet } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
-import { apiClient, Wallet as WalletType } from '@/lib/api'
+import { apiClient, Account } from '@/lib/api'
 
 interface EditWalletModalProps {
   isOpen: boolean
   onClose: () => void
-  wallet: WalletType | null
+  wallet: Account | null
   onSuccess?: () => void
 }
 
-const walletTypes = [
-  { value: 'cash', label: 'Cash', icon: '💵' },
-  { value: 'bank', label: 'Bank', icon: '🏦' },
-  { value: 'card', label: 'Card', icon: '💳' },
-  { value: 'credit-card', label: 'Credit Card', icon: '💳' },
-  { value: 'paylater', label: 'PayLater', icon: '📋' },
-  { value: 'e-wallet', label: 'E-Wallet', icon: '📱' },
-  { value: 'other', label: 'Other', icon: '💼' },
-]
-
-const defaultIcons = ['💵', '🏦', '💳', '📱', '💰', '💎', '🎯', '⭐']
-const defaultColors = [
-  '#22c55e', // green
-  '#3b82f6', // blue
-  '#8b5cf6', // purple
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#14b8a6', // teal
-]
 
 export default function EditWalletModal({
   isOpen,
@@ -46,11 +25,7 @@ export default function EditWalletModal({
   const toast = useToast()
   const [formData, setFormData] = useState({
     name: '',
-    wallet_type: 'cash',
-    icon: '💵',
-    color: '#22c55e',
-    credit_limit: '',
-    is_default: false,
+    currency: 'IDR',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -58,11 +33,7 @@ export default function EditWalletModal({
     if (wallet) {
       setFormData({
         name: wallet.name,
-        wallet_type: wallet.wallet_type,
-        icon: wallet.icon || '💵',
-        color: wallet.color || '#22c55e',
-        credit_limit: wallet.credit_limit?.toString() || '',
-        is_default: wallet.is_default || false,
+        currency: wallet.currency || 'IDR',
       })
     }
   }, [wallet])
@@ -74,15 +45,9 @@ export default function EditWalletModal({
     setIsSubmitting(true)
 
     try {
-      // Always send icon and color - they should always have values from form
-      const response = await apiClient.updateWallet(wallet.id, {
+      await apiClient.updateAccount(wallet.id, {
         name: formData.name,
-        wallet_type: formData.wallet_type,
-        // Balance tidak bisa diubah melalui edit - hanya melalui transaksi
-        icon: formData.icon,
-        color: formData.color,
-        credit_limit: formData.credit_limit ? parseFloat(formData.credit_limit) : undefined,
-        is_default: formData.is_default,
+        currency: formData.currency,
       })
 
 
@@ -137,33 +102,31 @@ export default function EditWalletModal({
           />
         </div>
 
-        {/* Wallet Type */}
+        {/* Currency */}
         <div>
           <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
-            Wallet Type
+            Currency
             <span className="text-primary-500 ml-1">*</span>
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {walletTypes.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => setFormData({ ...formData, wallet_type: type.value })}
-                className={`
-                  p-3 rounded-lg border-2 transition-all duration-200
-                  ${formData.wallet_type === type.value
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                    : 'border-light-300 dark:border-dark-700 bg-light-100 dark:bg-dark-800/50 hover:border-light-400 dark:hover:border-dark-600'
-                  }
-                `}
-              >
-                <div className="text-2xl mb-1">{type.icon}</div>
-                <div className="text-xs font-medium text-light-700 dark:text-dark-300">
-                  {type.label}
-                </div>
-              </button>
-            ))}
-          </div>
+          <select
+            name="currency"
+            value={formData.currency}
+            onChange={handleChange}
+            className="w-full px-4 py-2.5 rounded-lg border-2 border-light-300 dark:border-dark-700 bg-light-100 dark:bg-dark-800/50 text-light-800 dark:text-dark-100 focus:outline-none focus:border-primary-500 dark:focus:border-primary-500 transition-colors"
+            required
+          >
+            <option value="IDR">IDR - Indonesian Rupiah</option>
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="SGD">SGD - Singapore Dollar</option>
+            <option value="MYR">MYR - Malaysian Ringgit</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="CNY">CNY - Chinese Yuan</option>
+          </select>
+          <p className="text-xs text-light-500 dark:text-dark-500 mt-1">
+            Pilih mata uang untuk account ini
+          </p>
         </div>
 
         {/* Balance Info - Read Only */}
@@ -171,9 +134,9 @@ export default function EditWalletModal({
           <div className="p-4 rounded-lg bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700">
             <p className="text-xs text-light-500 dark:text-dark-500 mb-1">Current Balance</p>
             <p className="text-lg font-semibold text-light-800 dark:text-dark-100">
-              {new Intl.NumberFormat('id-ID', {
+              {new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: 'IDR',
+                currency: wallet.currency || 'IDR',
                 minimumFractionDigits: 0,
               }).format(wallet.balance)}
             </p>
@@ -183,92 +146,6 @@ export default function EditWalletModal({
           </div>
         )}
 
-        {/* Credit Limit - Only for credit-card and paylater */}
-        {(formData.wallet_type === 'credit-card' || formData.wallet_type === 'paylater') && (
-          <div>
-            <Input
-              label="Credit Limit (Rp)"
-              type="number"
-              name="credit_limit"
-              placeholder="0"
-              value={formData.credit_limit}
-              onChange={handleChange}
-              icon={<Wallet className="w-4 h-4 text-light-500 dark:text-dark-400" />}
-            />
-            <p className="text-xs text-light-500 dark:text-dark-500 mt-1">
-              Maksimal limit kredit untuk wallet ini
-            </p>
-          </div>
-        )}
-
-        {/* Icon */}
-        <div>
-          <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
-            Icon
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {defaultIcons.map((icon) => (
-              <button
-                key={icon}
-                type="button"
-                onClick={() => setFormData({ ...formData, icon })}
-                className={`
-                  w-10 h-10 rounded-lg text-xl flex items-center justify-center
-                  transition-all duration-200
-                  ${formData.icon === icon
-                    ? 'bg-primary-500 text-white scale-110'
-                    : 'bg-light-100 dark:bg-dark-800/50 hover:bg-light-200 dark:hover:bg-dark-700'
-                  }
-                `}
-              >
-                {icon}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Color */}
-        <div>
-          <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
-            Color
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {defaultColors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setFormData({ ...formData, color })}
-                className={`
-                  w-10 h-10 rounded-lg transition-all duration-200
-                  ${formData.color === color
-                    ? 'ring-2 ring-offset-2 ring-primary-500 scale-110'
-                    : 'hover:scale-105'
-                  }
-                `}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Set as Default */}
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700">
-          <input
-            type="checkbox"
-            id="is_default"
-            checked={formData.is_default}
-            onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-            className="w-4 h-4 rounded border-light-300 dark:border-dark-700 text-primary-500 focus:ring-primary-500 focus:ring-2"
-          />
-          <label htmlFor="is_default" className="flex-1 cursor-pointer">
-            <div className="text-sm font-medium text-light-800 dark:text-dark-100">
-              Set as Default Wallet
-            </div>
-            <div className="text-xs text-light-500 dark:text-dark-500 mt-0.5">
-              Wallet ini akan digunakan secara otomatis saat membuat transaksi tanpa memilih wallet
-            </div>
-          </label>
-        </div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">

@@ -90,6 +90,7 @@ func main() {
 		accounts.POST("", accountHandler.Create)
 		accounts.GET("", accountHandler.GetAll)
 		accounts.GET("/:id", accountHandler.GetByID)
+		accounts.PUT("/:id", accountHandler.Update)
 		accounts.DELETE("/:id", accountHandler.Delete)
 	}
 

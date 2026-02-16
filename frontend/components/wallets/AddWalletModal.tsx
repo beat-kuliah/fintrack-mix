@@ -48,6 +48,7 @@ export default function AddWalletModal({
     icon: '💵',
     color: '#22c55e',
     credit_limit: '',
+    currency: 'IDR',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -59,7 +60,7 @@ export default function AddWalletModal({
       await apiClient.createAccount({
         name: formData.name,
         type: formData.wallet_type as 'bank' | 'wallet' | 'cash' | 'paylater',
-        currency: 'IDR',
+        currency: formData.currency,
       })
 
       // Reset form
@@ -69,6 +70,7 @@ export default function AddWalletModal({
         icon: '💵',
         color: '#22c55e',
         credit_limit: '',
+        currency: 'IDR',
       })
 
       toast.success('Account berhasil ditambahkan! 💳')
@@ -141,6 +143,33 @@ export default function AddWalletModal({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Currency */}
+        <div>
+          <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
+            Currency
+            <span className="text-primary-500 ml-1">*</span>
+          </label>
+          <select
+            name="currency"
+            value={formData.currency}
+            onChange={handleChange}
+            className="w-full px-4 py-2.5 rounded-lg border-2 border-light-300 dark:border-dark-700 bg-light-100 dark:bg-dark-800/50 text-light-800 dark:text-dark-100 focus:outline-none focus:border-primary-500 dark:focus:border-primary-500 transition-colors"
+            required
+          >
+            <option value="IDR">IDR - Indonesian Rupiah</option>
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="SGD">SGD - Singapore Dollar</option>
+            <option value="MYR">MYR - Malaysian Ringgit</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="CNY">CNY - Chinese Yuan</option>
+          </select>
+          <p className="text-xs text-light-500 dark:text-dark-500 mt-1">
+            Pilih mata uang untuk account ini (berguna untuk investasi, kartu kredit internasional, dll)
+          </p>
         </div>
 
         {/* Credit Limit - Only for credit-card and paylater */}

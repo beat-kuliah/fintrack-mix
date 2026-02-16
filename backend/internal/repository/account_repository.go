@@ -96,8 +96,8 @@ func (r *AccountRepository) GetByID(id uuid.UUID) (*models.Account, error) {
 
 func (r *AccountRepository) Update(account *models.Account) error {
 	account.UpdatedAt = time.Now()
-	query := `UPDATE accounts SET name = $1, balance = $2, updated_at = $3 WHERE id = $4`
-	_, err := r.db.Exec(query, account.Name, account.Balance, account.UpdatedAt, account.ID)
+	query := `UPDATE accounts SET name = $1, balance = $2, currency = $3, updated_at = $4 WHERE id = $5`
+	_, err := r.db.Exec(query, account.Name, account.Balance, account.Currency, account.UpdatedAt, account.ID)
 	return err
 }
 

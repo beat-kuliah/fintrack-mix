@@ -40,3 +40,8 @@ type CreateSubAccountRequest struct {
 	Name            string    `json:"name" binding:"required"`
 	ParentAccountID uuid.UUID `json:"parent_account_id" binding:"required"`
 }
+
+type UpdateAccountRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Currency string `json:"currency"`
+}

@@ -79,6 +79,46 @@ func (h *AccountHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, account)
 }
 
+func (h *AccountHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
+		return
+	}
+
+	// Check ownership
+	account, err := h.accountRepo.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Account not found"})
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+	if account.UserID != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
+	var req models.UpdateAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Update only allowed fields
+	account.Name = req.Name
+	if req.Currency != "" {
+		account.Currency = req.Currency
+	}
+
+	if err := h.accountRepo.Update(account); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, account)
+}
+
 func (h *AccountHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
