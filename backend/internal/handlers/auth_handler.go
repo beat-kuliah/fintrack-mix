@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -34,6 +37,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 		return
 	}
+	// If error is not "not found", it's a database error
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("Error checking email existence: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error while checking email"})
+		return
+	}
 
 	// Check if username exists
 	_, err = h.userRepo.GetByUsername(req.Username)
@@ -41,10 +50,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Username already taken"})
 		return
 	}
+	// If error is not "not found", it's a database error
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("Error checking username existence: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error while checking username"})
+		return
+	}
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
@@ -59,7 +75,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := h.userRepo.Create(user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		log.Printf("Error creating user: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "details": err.Error()})
 		return
 	}
 

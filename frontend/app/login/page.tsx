@@ -78,12 +78,11 @@ export default function LoginPage() {
       // Store token and update auth context
       login(response.token, response.user)
       
-      // Show success toast
-      toast.success('Login berhasil! Selamat datang kembali! 🎉')
-      
-      // Redirect to dashboard
+      // Redirect to dashboard immediately
       router.push('/dashboard')
-      router.refresh()
+      
+      // Show success toast after navigation starts
+      toast.success('Login berhasil! Selamat datang kembali! 🎉')
     } catch (error: any) {
       const errorMessage = error?.message || error?.error || 'Terjadi kesalahan saat login'
       

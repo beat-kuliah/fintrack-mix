@@ -25,10 +25,10 @@ export default function BudgetingPage() {
         apiClient.getBudgets({ month: selectedMonth, year: selectedYear }),
         apiClient.getTransactions(),
       ])
-      setBudgets(budgetsData)
+      setBudgets(budgetsData || [])
       
       // Filter transactions for current month/year
-      const currentMonthTransactions = transactionsData.filter(t => {
+      const currentMonthTransactions = (transactionsData || []).filter(t => {
         const date = new Date(t.transaction_date)
         return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear
       })
@@ -53,6 +53,15 @@ export default function BudgetingPage() {
   const remaining = totalBudget - totalExpenses
   const percentageUsed = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0
   const isOverBudget = totalExpenses > totalBudget
+
+  // Helper function to format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
 
   return (
     <DashboardLayout>
@@ -124,7 +133,7 @@ export default function BudgetingPage() {
             </div>
             <div className="flex items-center justify-between mt-2 text-xs text-light-500 dark:text-dark-500">
               <span>Rp 0</span>
-              <span>Rp {monthlyBudget.toLocaleString('id-ID')}</span>
+              <span>Rp {totalBudget.toLocaleString('id-ID')}</span>
             </div>
           </div>
 
@@ -138,7 +147,7 @@ export default function BudgetingPage() {
                 <span className="text-xs font-medium text-light-600 dark:text-dark-400">Monthly Budget</span>
               </div>
               <p className="text-2xl font-bold text-light-800 dark:text-dark-100">
-                Rp {monthlyBudget.toLocaleString('id-ID')}
+                Rp {totalBudget.toLocaleString('id-ID')}
               </p>
             </div>
             <div className="glass-light rounded-xl p-5 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
@@ -149,7 +158,7 @@ export default function BudgetingPage() {
                 <span className="text-xs font-medium text-light-600 dark:text-dark-400">Current Expenses</span>
               </div>
               <p className="text-2xl font-bold text-light-800 dark:text-dark-100">
-                Rp {currentExpenses.toLocaleString('id-ID')}
+                Rp {totalExpenses.toLocaleString('id-ID')}
               </p>
             </div>
             <div className={`glass-light rounded-xl p-5 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group ${

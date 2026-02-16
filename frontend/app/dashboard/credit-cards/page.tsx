@@ -22,10 +22,11 @@ export default function CreditCardsPage() {
     try {
       setLoading(true)
       const response = await apiClient.getCreditCards()
-      setCards(response)
+      setCards(response || [])
     } catch (error: any) {
       console.error('Error fetching credit cards:', error)
       toast.error(error.message || 'Gagal memuat credit cards')
+      setCards([])
     } finally {
       setLoading(false)
     }

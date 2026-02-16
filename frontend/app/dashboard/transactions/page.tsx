@@ -21,9 +21,10 @@ export default function TransactionsPage() {
     try {
       setIsLoading(true)
       const response = await apiClient.getTransactions()
-      setTransactions(response)
+      setTransactions(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error('Error fetching transactions:', error)
+      setTransactions([])
     } finally {
       setIsLoading(false)
     }
@@ -79,11 +80,11 @@ export default function TransactionsPage() {
   }
 
   // Calculate totals
-  const totalIncome = transactions
+  const totalIncome = (transactions || [])
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0)
 
-  const totalExpense = transactions
+  const totalExpense = (transactions || [])
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0)
 

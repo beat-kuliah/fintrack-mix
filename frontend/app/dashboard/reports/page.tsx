@@ -151,7 +151,7 @@ export default function ReportsPage() {
                 <h2 className="text-base sm:text-lg font-semibold text-light-800 dark:text-dark-100 mb-4">
                   Income by Category
                 </h2>
-                {summary.income_by_category.length === 0 ? (
+                {!summary.income_by_category || summary.income_by_category.length === 0 ? (
                   <p className="text-sm text-light-500 dark:text-dark-500 text-center py-8">
                     No income data available
                   </p>
@@ -176,7 +176,7 @@ export default function ReportsPage() {
                 <h2 className="text-base sm:text-lg font-semibold text-light-800 dark:text-dark-100 mb-4">
                   Expense by Category
                 </h2>
-                {summary.expense_by_category.length === 0 ? (
+                {!summary.expense_by_category || summary.expense_by_category.length === 0 ? (
                   <p className="text-sm text-light-500 dark:text-dark-500 text-center py-8">
                     No expense data available
                   </p>

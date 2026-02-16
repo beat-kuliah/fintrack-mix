@@ -114,12 +114,11 @@ export default function RegisterPage() {
       // Store token and update auth context
       login(loginResponse.token, loginResponse.user)
       
-      // Show success toast
-      toast.success('Registrasi berhasil! Selamat bergabung! 🎉')
-      
-      // Redirect to dashboard
+      // Redirect to dashboard immediately
       router.push('/dashboard')
-      router.refresh()
+      
+      // Show success toast after navigation starts
+      toast.success('Registrasi berhasil! Selamat bergabung! 🎉')
     } catch (error: any) {
       const errorMessage = error?.message || error?.error || 'Terjadi kesalahan saat registrasi'
       

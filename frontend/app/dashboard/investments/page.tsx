@@ -28,12 +28,13 @@ export default function InvestmentsPage() {
         apiClient.getGoldSummary(),
         apiClient.getGoldPrice().catch(() => null),
       ])
-      setAssets(assetsData)
+      setAssets(assetsData || [])
       setSummary(summaryData)
       setCurrentPrice(priceData)
     } catch (error: any) {
       console.error('Error fetching data:', error)
       toast.error(error.message || 'Gagal memuat data')
+      setAssets([]) // Ensure assets is always an array even on error
     } finally {
       setLoading(false)
     }
@@ -249,7 +250,7 @@ export default function InvestmentsPage() {
               <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-primary-500" />
               <p className="text-light-500 dark:text-dark-500 text-sm">Loading assets...</p>
             </div>
-          ) : assets.length === 0 ? (
+          ) : !assets || assets.length === 0 ? (
             <div className="text-center py-10 sm:py-12 lg:py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-light-100 dark:bg-dark-800 flex items-center justify-center">
                 <Coins className="w-8 h-8 text-light-400 dark:text-dark-600" />
