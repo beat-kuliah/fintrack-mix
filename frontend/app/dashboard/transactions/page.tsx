@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import AddTransactionModal from '@/components/transactions/AddTransactionModal'
 import EditTransactionModal from '@/components/transactions/EditTransactionModal'
+import EmptyState from '@/components/ui/EmptyState'
+import Confetti from '@/components/ui/Confetti'
 import { apiClient, Transaction } from '@/lib/api'
 import { ArrowLeftRight, ArrowUpRight, ArrowDownRight, Calendar, Tag, Wallet, Edit, Trash2 } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
@@ -16,6 +18,8 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [isFirstTransaction, setIsFirstTransaction] = useState(false)
 
   const fetchTransactions = async () => {
     try {
@@ -34,8 +38,15 @@ export default function TransactionsPage() {
     fetchTransactions()
   }, [])
 
-  const handleTransactionSuccess = () => {
-    fetchTransactions()
+  const handleTransactionSuccess = async () => {
+    const previousCount = transactions.length
+    await fetchTransactions()
+    // Check if this is first transaction
+    if (previousCount === 0) {
+      setIsFirstTransaction(true)
+      setShowConfetti(true)
+      toast.success('First transaction added! 🎉 Welcome to FinTrack!')
+    }
   }
 
   const handleEdit = (transaction: Transaction) => {
@@ -94,6 +105,7 @@ export default function TransactionsPage() {
 
   return (
     <DashboardLayout>
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       <AddTransactionModal
         isOpen={isIncomeModalOpen}
         onClose={() => setIsIncomeModalOpen(false)}
@@ -230,33 +242,13 @@ export default function TransactionsPage() {
               </p>
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-10 sm:py-12 lg:py-16">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-light-100 dark:bg-dark-800 flex items-center justify-center">
-                <ArrowLeftRight className="w-8 h-8 text-light-400 dark:text-dark-600" />
-              </div>
-              <p className="text-light-500 dark:text-dark-500 text-sm font-medium mb-2">
-                No transactions yet
-              </p>
-              <p className="text-light-400 dark:text-dark-600 text-xs mb-4">
-                Start tracking your finances by adding your first transaction
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                <button
-                  onClick={() => setIsIncomeModalOpen(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  Add Income
-                </button>
-                <button
-                  onClick={() => setIsExpenseModalOpen(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-red-500/30"
-                >
-                  <ArrowDownRight className="w-4 h-4" />
-                  Add Expense
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              type="transactions"
+              title="No transactions yet"
+              description="Start tracking your finances by adding your first transaction. Every journey begins with a single step! 💪"
+              actionLabel="Add Your First Transaction"
+              onAction={() => setIsIncomeModalOpen(true)}
+            />
           ) : (
             <div className="space-y-3">
               {transactions.map((transaction) => {

@@ -8,6 +8,9 @@ import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import EmptyState from '@/components/ui/EmptyState'
+import Confetti from '@/components/ui/Confetti'
+import AchievementBadge from '@/components/ui/AchievementBadge'
 
 export default function BudgetingPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -18,6 +21,8 @@ export default function BudgetingPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [expandedBudgets, setExpandedBudgets] = useState<Set<string>>(new Set())
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [achievedBudget, setAchievedBudget] = useState<string | null>(null)
   const toast = useToast()
 
   const fetchData = async () => {
@@ -58,6 +63,26 @@ export default function BudgetingPage() {
   const remaining = totalBudget - totalExpenses
   const percentageUsed = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0
   const isOverBudget = totalExpenses > totalBudget
+  const isWithinBudget = !isOverBudget && totalBudget > 0
+
+  // Check for budget achievement
+  useEffect(() => {
+    if (isWithinBudget && percentageUsed < 100 && totalExpenses > 0 && budgets.length > 0) {
+      // Check if all budgets are within limit
+      const allWithinBudget = budgets.every(budget => {
+        const catExpenses = transactions
+          .filter(t => t.type === 'expense' && t.category === budget.category)
+          .reduce((sum, t) => sum + t.amount, 0)
+        return catExpenses <= budget.amount
+      })
+      
+      if (allWithinBudget && !achievedBudget) {
+        setShowConfetti(true)
+        setAchievedBudget('all')
+        toast.success('Budget Master! 🎉 You stayed within all budgets this month!')
+      }
+    }
+  }, [budgets, transactions, isWithinBudget, percentageUsed, totalExpenses, achievedBudget])
 
   // Helper function to format currency
   const formatCurrency = (amount: number) => {
@@ -70,15 +95,26 @@ export default function BudgetingPage() {
 
   return (
     <DashboardLayout>
+      <Confetti trigger={showConfetti} onComplete={() => {
+        setShowConfetti(false)
+        setAchievedBudget(null)
+      }} />
       <div className="w-full">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-display text-light-800 dark:text-dark-100 mb-1.5 sm:mb-2">
-            Budgeting 💰
-          </h1>
-          <p className="text-xs sm:text-sm text-light-600 dark:text-dark-400">
-            Track your monthly expenses and stay within budget
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-display text-light-800 dark:text-dark-100 mb-1.5 sm:mb-2">
+                Budgeting 💰
+              </h1>
+              <p className="text-xs sm:text-sm text-light-600 dark:text-dark-400">
+                Track your monthly expenses and stay within budget
+              </p>
+            </div>
+            {achievedBudget && (
+              <AchievementBadge achievement="budget-master" size="lg" animated showTooltip />
+            )}
+          </div>
         </div>
 
         {/* Budget Overview Card */}
@@ -254,23 +290,13 @@ export default function BudgetingPage() {
               <p className="text-light-500 dark:text-dark-500 text-sm">Loading budgets...</p>
             </div>
           ) : budgets.length === 0 ? (
-            <div className="text-center py-10 sm:py-12 lg:py-16">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-light-100 dark:bg-dark-800 flex items-center justify-center">
-                <Wallet className="w-8 h-8 text-light-400 dark:text-dark-600" />
-              </div>
-              <p className="text-light-500 dark:text-dark-500 text-sm font-medium mb-2">
-                No budget categories set up yet
-              </p>
-              <p className="text-light-400 dark:text-dark-600 text-xs mb-4">
-                Create categories to better track your spending
-              </p>
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-primary-500/30"
-              >
-                Create Category
-              </button>
-            </div>
+            <EmptyState
+              type="budgets"
+              title="No budget categories set up yet"
+              description="Create budget categories to better track your spending and achieve your financial goals! 📊"
+              actionLabel="Create Your First Budget"
+              onAction={() => setIsAddModalOpen(true)}
+            />
           ) : (
             <div className="space-y-4">
               {budgets.map((budget) => {

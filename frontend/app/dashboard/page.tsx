@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import AddTransactionModal from '@/components/transactions/AddTransactionModal'
 import MonthlyIncomeChart from '@/components/charts/MonthlyIncomeChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
+import EmptyState from '@/components/ui/EmptyState'
 import { apiClient, Transaction } from '@/lib/api'
 import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Calendar, Tag } from 'lucide-react'
 
@@ -304,23 +305,13 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (transactions ?? []).length === 0 ? (
-            <div className="text-center py-8 sm:py-12 lg:py-16">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-light-100 dark:bg-dark-800 flex items-center justify-center">
-                <ArrowLeftRight className="w-8 h-8 text-light-400 dark:text-dark-600" />
-              </div>
-              <p className="text-light-500 dark:text-dark-500 text-sm sm:text-base font-medium mb-2">
-                No transactions yet
-              </p>
-              <p className="text-light-400 dark:text-dark-600 text-xs sm:text-sm mb-4">
-                Start tracking your finances by adding your first transaction
-              </p>
-              <button
-                onClick={() => setIsTransactionModalOpen(true)}
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-primary-500/30"
-              >
-                Add Transaction
-              </button>
-            </div>
+            <EmptyState
+              type="transactions"
+              title="No transactions yet"
+              description="Start your financial journey by adding your first transaction. Track your income and expenses to take control of your money! 💰"
+              actionLabel="Add Your First Transaction"
+              onAction={() => setIsTransactionModalOpen(true)}
+            />
           ) : (
             <div className="space-y-3">
               {(transactions ?? []).slice(0, 5).map((transaction) => {

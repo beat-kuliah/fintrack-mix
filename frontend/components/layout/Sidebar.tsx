@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface NavItem {
   name: string
@@ -102,9 +103,9 @@ export default function Sidebar({ isMobileOpen: externalIsMobileOpen, setIsMobil
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 sm:p-6 border-b border-light-200 dark:border-dark-800">
-            <div className="flex items-center justify-between gap-3">
+          {/* Logo - Match header height */}
+          <div className="h-14 sm:h-16 px-4 sm:px-6 border-b border-light-200 dark:border-dark-800 flex items-center">
+            <div className="flex items-center justify-between gap-3 w-full">
               <Link
                 href="/dashboard"
                 className="flex items-center gap-3 group flex-1"
@@ -118,14 +119,20 @@ export default function Sidebar({ isMobileOpen: externalIsMobileOpen, setIsMobil
                   <span className="text-light-800 dark:text-dark-100">Track</span>
                 </span>
               </Link>
-              {/* Close button - only show on mobile when menu is open */}
-              <button
-                onClick={() => setIsMobileOpen(false)}
-                className="lg:hidden p-2 rounded-lg text-light-600 dark:text-dark-400 hover:bg-light-100/50 dark:hover:bg-white/5 hover:text-light-800 dark:hover:text-dark-200 transition-all duration-200"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Theme toggle - Show on desktop, hide on mobile (mobile has it in header) */}
+                <div className="hidden lg:block">
+                  <ThemeToggle />
+                </div>
+                {/* Close button - only show on mobile when menu is open */}
+                <button
+                  onClick={() => setIsMobileOpen(false)}
+                  className="lg:hidden p-2 rounded-lg text-light-600 dark:text-dark-400 hover:bg-light-100/50 dark:hover:bg-white/5 hover:text-light-800 dark:hover:text-dark-200 transition-all duration-200"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -196,11 +203,6 @@ export default function Sidebar({ isMobileOpen: externalIsMobileOpen, setIsMobil
               <LogOut className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
               <span className="flex-1 text-left">Logout</span>
             </button>
-
-            {/* Copyright */}
-            <div className="text-xs text-light-500 dark:text-dark-500 text-center pt-2">
-              © 2024 FinTrack
-            </div>
           </div>
         </div>
       </aside>
