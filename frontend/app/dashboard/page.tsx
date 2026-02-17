@@ -41,9 +41,9 @@ export default function DashboardPage() {
       // TODO: Implement proper monthly stats and category breakdown endpoints
       const allTransactions = (await apiClient.getTransactions()) ?? []
       
-      // Calculate monthly data
+      // Calculate monthly data - exclude credit card transactions
       const monthlyMap = new Map<string, { month: number; year: number; income: number; expense: number }>()
-      allTransactions.forEach(t => {
+      allTransactions.filter(t => !t.credit_card_id).forEach(t => {
         const date = new Date(t.transaction_date)
         const key = `${date.getFullYear()}-${date.getMonth() + 1}`
         if (!monthlyMap.has(key)) {
@@ -58,9 +58,9 @@ export default function DashboardPage() {
       })
       setMonthlyData(Array.from(monthlyMap.values()))
 
-      // Calculate category data
+      // Calculate category data - exclude credit card transactions
       const categoryMap = new Map<string, number>()
-      allTransactions.filter(t => t.type === 'expense').forEach(t => {
+      allTransactions.filter(t => t.type === 'expense' && !t.credit_card_id).forEach(t => {
         const cat = t.category || 'Uncategorized'
         categoryMap.set(cat, (categoryMap.get(cat) || 0) + t.amount)
       })
@@ -116,12 +116,15 @@ export default function DashboardPage() {
         {/* Stats Cards */}
         {(() => {
           const txList = transactions ?? []
+          // Exclude credit card transactions from balance calculation
+          // Credit card expenses don't reduce cash balance, they only increase debt
+          // Credit card income (payments) don't increase cash balance, they only reduce debt
           const totalIncome = txList
-            .filter(t => t.type === 'income')
+            .filter(t => t.type === 'income' && !t.credit_card_id)
             .reduce((sum, t) => sum + t.amount, 0)
 
           const totalExpense = txList
-            .filter(t => t.type === 'expense')
+            .filter(t => t.type === 'expense' && !t.credit_card_id)
             .reduce((sum, t) => sum + t.amount, 0)
 
           const balance = totalIncome - totalExpense

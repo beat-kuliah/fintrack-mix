@@ -109,6 +109,44 @@ func (h *BudgetHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, budget)
 }
 
+func (h *BudgetHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid budget ID"})
+		return
+	}
+
+	budget, err := h.budgetRepo.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Budget not found"})
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+	if budget.UserID != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
+	var req CreateBudgetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	budget.Category = req.Category
+	budget.Amount = req.Amount
+	budget.BudgetMonth = req.BudgetMonth
+	budget.BudgetYear = req.BudgetYear
+
+	if err := h.budgetRepo.Update(budget); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update budget. Category might already exist for this month."})
+		return
+	}
+
+	c.JSON(http.StatusOK, budget)
+}
+
 func (h *BudgetHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

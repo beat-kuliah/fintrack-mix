@@ -301,7 +301,6 @@ function AddCreditCardModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
     card_name: '',
     last_four_digits: '',
     credit_limit: '',
-    current_balance: '',
     billing_date: '',
     payment_due_date: '',
   })
@@ -317,7 +316,6 @@ function AddCreditCardModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
         card_name: formData.card_name,
         last_four_digits: formData.last_four_digits,
         credit_limit: parseFloat(formData.credit_limit),
-        current_balance: formData.current_balance ? parseFloat(formData.current_balance) : 0,
         billing_date: parseInt(formData.billing_date),
         payment_due_date: parseInt(formData.payment_due_date),
       })
@@ -327,7 +325,6 @@ function AddCreditCardModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
         card_name: '',
         last_four_digits: '',
         credit_limit: '',
-        current_balance: '',
         billing_date: '',
         payment_due_date: '',
       })
@@ -366,13 +363,11 @@ function AddCreditCardModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
           placeholder="5000000"
           required
         />
-        <Input
-          label="Current Balance (optional)"
-          type="number"
-          value={formData.current_balance}
-          onChange={(e) => setFormData({ ...formData, current_balance: e.target.value })}
-          placeholder="0"
-        />
+        <div className="mb-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            💡 <strong>Note:</strong> Balance akan dihitung otomatis dari transaksi yang menggunakan credit card ini.
+          </p>
+        </div>
         <Input
           label="Billing Date (1-31)"
           type="number"
@@ -409,38 +404,63 @@ function AddCreditCardModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
 function EditCreditCardModal({ isOpen, onClose, card, onSuccess }: { isOpen: boolean; onClose: () => void; card: CreditCard; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     card_name: card.card_name,
-    last_four_digits: card.last_four_digits,
     credit_limit: card.credit_limit.toString(),
-    current_balance: card.current_balance.toString(),
     billing_date: card.billing_date.toString(),
     payment_due_date: card.payment_due_date.toString(),
   })
   const [loading, setLoading] = useState(false)
   const toast = useToast()
 
+  // Update form data when card changes
+  useEffect(() => {
+    if (card) {
+      setFormData({
+        card_name: card.card_name,
+        credit_limit: card.credit_limit.toString(),
+        billing_date: card.billing_date.toString(),
+        payment_due_date: card.payment_due_date.toString(),
+      })
+    }
+  }, [card])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Note: Backend doesn't have update endpoint, so we'll just show a message
-    toast.info('Update feature coming soon! For now, please delete and recreate the card.')
-    onClose()
+    setLoading(true)
+
+    try {
+      await apiClient.updateCreditCard(card.id, {
+        card_name: formData.card_name,
+        credit_limit: parseFloat(formData.credit_limit),
+        billing_date: parseInt(formData.billing_date),
+        payment_due_date: parseInt(formData.payment_due_date),
+      })
+      toast.success('Credit card berhasil diupdate! ✅')
+      onSuccess()
+    } catch (error: any) {
+      console.error('Error updating credit card:', error)
+      toast.error(error.message || 'Gagal mengupdate credit card')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Credit Card">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="mb-4 p-3 rounded-lg bg-light-100 dark:bg-dark-800 border border-light-200 dark:border-dark-700">
+          <p className="text-xs text-light-500 dark:text-dark-500 mb-1">Card Number</p>
+          <p className="text-sm font-medium text-light-700 dark:text-dark-300">
+            **** {card.last_four_digits}
+          </p>
+          <p className="text-xs text-light-400 dark:text-dark-600 mt-1">
+            Last 4 digits cannot be changed
+          </p>
+        </div>
         <Input
           label="Card Name"
           type="text"
           value={formData.card_name}
           onChange={(e) => setFormData({ ...formData, card_name: e.target.value })}
-          required
-        />
-        <Input
-          label="Last 4 Digits"
-          type="text"
-          value={formData.last_four_digits}
-          onChange={(e) => setFormData({ ...formData, last_four_digits: e.target.value })}
-          maxLength={4}
           required
         />
         <Input
@@ -450,12 +470,18 @@ function EditCreditCardModal({ isOpen, onClose, card, onSuccess }: { isOpen: boo
           onChange={(e) => setFormData({ ...formData, credit_limit: e.target.value })}
           required
         />
-        <Input
-          label="Current Balance"
-          type="number"
-          value={formData.current_balance}
-          onChange={(e) => setFormData({ ...formData, current_balance: e.target.value })}
-        />
+        <div className="mb-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">
+            💡 <strong>Current Balance:</strong> {new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              minimumFractionDigits: 0,
+            }).format(card.current_balance)}
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-400">
+            Balance dihitung otomatis dari transaksi dan tidak dapat diubah manual.
+          </p>
+        </div>
         <Input
           label="Billing Date (1-31)"
           type="number"

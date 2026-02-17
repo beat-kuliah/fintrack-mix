@@ -17,7 +17,8 @@ const (
 type Transaction struct {
 	ID              uuid.UUID       `db:"id" json:"id"`
 	UserID          uuid.UUID       `db:"user_id" json:"user_id"`
-	AccountID       uuid.UUID       `db:"account_id" json:"account_id"`
+	AccountID       *uuid.UUID      `db:"account_id" json:"account_id,omitempty"`
+	CreditCardID    *uuid.UUID      `db:"credit_card_id" json:"credit_card_id,omitempty"`
 	Type            TransactionType `db:"type" json:"type"`
 	Category        string          `db:"category" json:"category"`
 	Amount          float64         `db:"amount" json:"amount"`
@@ -28,10 +29,21 @@ type Transaction struct {
 }
 
 type CreateTransactionRequest struct {
-	AccountID       string          `json:"account_id" binding:"required"`
+	AccountID       string          `json:"account_id"`
+	CreditCardID    string          `json:"credit_card_id"`
 	Type            TransactionType `json:"type" binding:"required"`
 	Category        string          `json:"category" binding:"required"`
 	Amount          float64         `json:"amount" binding:"required,gt=0"`
+	Description     string          `json:"description"`
+	TransactionDate string          `json:"transaction_date"`
+}
+
+type UpdateTransactionRequest struct {
+	AccountID       string          `json:"account_id"`
+	CreditCardID    string          `json:"credit_card_id"`
+	Type            TransactionType `json:"type"`
+	Category        string          `json:"category"`
+	Amount          float64         `json:"amount" binding:"gt=0"`
 	Description     string          `json:"description"`
 	TransactionDate string          `json:"transaction_date"`
 }

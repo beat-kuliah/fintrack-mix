@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Wallet, AlertCircle, CheckCircle2, TrendingDown, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import { Wallet, AlertCircle, CheckCircle2, TrendingDown, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Calendar, Edit2 } from 'lucide-react'
 import { apiClient, Budget, Transaction } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
@@ -14,6 +14,7 @@ export default function BudgetingPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [expandedBudgets, setExpandedBudgets] = useState<Set<string>>(new Set())
@@ -48,8 +49,11 @@ export default function BudgetingPage() {
 
   // Calculate totals
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
+  // Get list of budget categories
+  const budgetCategories = new Set(budgets.map(b => b.category))
+  // Only count expenses from categories that have budgets
   const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && budgetCategories.has(t.category))
     .reduce((sum, t) => sum + t.amount, 0)
   const remaining = totalBudget - totalExpenses
   const percentageUsed = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0
@@ -332,8 +336,19 @@ export default function BudgetingPage() {
                           </button>
                         )}
                         <button
+                          onClick={() => setEditingBudget(budget)}
+                          className="p-2 rounded-lg text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+                          title="Edit budget"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={async () => {
-                            if (confirm('Hapus budget ini?')) {
+                            const hasTransactions = categoryTransactions.length > 0
+                            const message = hasTransactions 
+                              ? `Budget ini memiliki ${categoryTransactions.length} transaksi. Transaksi tidak akan terhapus, hanya budget yang akan dihapus. Lanjutkan?`
+                              : 'Hapus budget ini?'
+                            if (confirm(message)) {
                               try {
                                 await apiClient.deleteBudget(budget.id)
                                 toast.success('Budget berhasil dihapus!')
@@ -344,6 +359,7 @@ export default function BudgetingPage() {
                             }
                           }}
                           className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                          title="Hapus budget"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -432,6 +448,19 @@ export default function BudgetingPage() {
         defaultMonth={selectedMonth}
         defaultYear={selectedYear}
       />
+
+      {/* Edit Budget Modal */}
+      {editingBudget && (
+        <EditBudgetModal
+          isOpen={!!editingBudget}
+          onClose={() => setEditingBudget(null)}
+          onSuccess={() => {
+            fetchData()
+            setEditingBudget(null)
+          }}
+          budget={editingBudget}
+        />
+      )}
     </DashboardLayout>
   )
 }
@@ -549,6 +578,126 @@ function AddBudgetModal({ isOpen, onClose, onSuccess, defaultMonth, defaultYear 
           </Button>
           <Button type="submit" loading={loading} className="flex-1">
             Add Budget
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function EditBudgetModal({ isOpen, onClose, onSuccess, budget }: {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: () => void
+  budget: Budget
+}) {
+  const [formData, setFormData] = useState({
+    category: budget.category,
+    amount: budget.amount.toString(),
+    budget_month: budget.budget_month,
+    budget_year: budget.budget_year,
+  })
+  const [loading, setLoading] = useState(false)
+  const toast = useToast()
+
+  useEffect(() => {
+    if (budget) {
+      setFormData({
+        category: budget.category,
+        amount: budget.amount.toString(),
+        budget_month: budget.budget_month,
+        budget_year: budget.budget_year,
+      })
+    }
+  }, [budget])
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      await apiClient.updateBudget(budget.id, {
+        category: formData.category,
+        amount: parseFloat(formData.amount),
+        budget_month: formData.budget_month,
+        budget_year: formData.budget_year,
+      })
+      toast.success('Budget berhasil diupdate! 🎉')
+      onSuccess()
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal mengupdate budget')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Budget">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Category"
+          type="text"
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          placeholder="e.g., Food, Transport, Entertainment"
+          required
+        />
+        <Input
+          label="Amount"
+          type="number"
+          value={formData.amount}
+          onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+          placeholder="5000000"
+          required
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
+              Month
+            </label>
+            <select
+              value={formData.budget_month}
+              onChange={(e) => setFormData({ ...formData, budget_month: parseInt(e.target.value) })}
+              className="w-full px-4 py-2 rounded-lg border border-light-300 dark:border-dark-700 bg-light-50 dark:bg-dark-900 text-light-800 dark:text-dark-200"
+              required
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                <option key={month} value={month}>
+                  {new Date(2000, month - 1).toLocaleString('id-ID', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-light-700 dark:text-dark-300 mb-2">
+              Year
+            </label>
+            <select
+              value={formData.budget_year}
+              onChange={(e) => setFormData({ ...formData, budget_year: parseInt(e.target.value) })}
+              className="w-full px-4 py-2 rounded-lg border border-light-300 dark:border-dark-700 bg-light-50 dark:bg-dark-900 text-light-800 dark:text-dark-200"
+              required
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 pt-4">
+          <Button type="button" onClick={onClose} variant="secondary" className="flex-1">
+            Cancel
+          </Button>
+          <Button type="submit" loading={loading} className="flex-1">
+            Update Budget
           </Button>
         </div>
       </form>

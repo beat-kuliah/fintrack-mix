@@ -5,7 +5,7 @@ import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { ArrowUpRight, ArrowDownRight, Calendar, Tag, ChevronDown, Wallet } from 'lucide-react'
-import { apiClient, Transaction, Wallet as WalletType, Budget } from '@/lib/api'
+import { apiClient, Transaction, Account, Budget } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
 interface EditTransactionModalProps {
@@ -28,26 +28,25 @@ export default function EditTransactionModal({
     category: '',
     date: '',
     type: 'expense' as 'income' | 'expense',
-    wallet_id: '',
+    account_id: '',
   })
-  const [wallets, setWallets] = useState<WalletType[]>([])
-  const [isLoadingWallets, setIsLoadingWallets] = useState(false)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [budgetCategories, setBudgetCategories] = useState<string[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
-  const fetchWallets = useCallback(async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
-      setIsLoadingWallets(true)
-      const response = await apiClient.getWallets()
-      if (response.success) {
-        setWallets(response.data)
-      }
+      setIsLoadingAccounts(true)
+      const response = await apiClient.getAccounts()
+      setAccounts(Array.isArray(response) ? response : [])
     } catch (error) {
-      console.error('Error fetching wallets:', error)
+      console.error('Error fetching accounts:', error)
+      setAccounts([])
     } finally {
-      setIsLoadingWallets(false)
+      setIsLoadingAccounts(false)
     }
   }, [])
 
@@ -72,15 +71,15 @@ export default function EditTransactionModal({
     }
   }, [formData.type, formData.date])
 
-  // Fetch wallets and budget categories when modal opens
+  // Fetch accounts and budget categories when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchWallets()
+      fetchAccounts()
       if (formData.type === 'expense') {
         fetchBudgetCategories()
       }
     }
-  }, [isOpen, fetchWallets, formData.type, fetchBudgetCategories])
+  }, [isOpen, fetchAccounts, formData.type, fetchBudgetCategories])
   
   // Re-fetch budget categories when date or type changes
   useEffect(() => {
@@ -93,13 +92,18 @@ export default function EditTransactionModal({
   useEffect(() => {
     if (isOpen && transaction) {
       setIsLoading(true)
+      // Format date from transaction_date (YYYY-MM-DD format)
+      const dateValue = transaction.transaction_date 
+        ? new Date(transaction.transaction_date).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0]
+      
       setFormData({
         amount: transaction.amount.toString(),
         description: transaction.description || '',
-        category: transaction.category_name || '',
-        date: transaction.date,
-        type: transaction.transaction_type === 'income' ? 'income' : 'expense',
-        wallet_id: transaction.wallet_id || '',
+        category: transaction.category || '',
+        date: dateValue,
+        type: transaction.type,
+        account_id: transaction.account_id || '',
       })
       setIsLoading(false)
     }
@@ -116,9 +120,9 @@ export default function EditTransactionModal({
         amount: parseFloat(formData.amount),
         description: formData.description || undefined,
         category: formData.category || undefined,
-        date: formData.date,
+        transaction_date: formData.date,
         type: formData.type,
-        wallet_id: formData.wallet_id || undefined,
+        account_id: formData.account_id || undefined,
       })
 
       toast.success('Transaksi berhasil diupdate! ✨')
@@ -176,30 +180,30 @@ export default function EditTransactionModal({
           {/* Wallet Selection */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-light-700 dark:text-dark-300 mb-1.5 sm:mb-2">
-              Wallet
+              Account
               <span className="text-primary-500 ml-1">*</span>
             </label>
             <div className="relative">
               <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-light-500 dark:text-dark-400 z-10">
                 <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              {isLoadingWallets ? (
+              {isLoadingAccounts ? (
                 <div className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3.5 text-sm sm:text-base bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700 rounded-lg sm:rounded-xl text-light-500 dark:text-dark-400">
-                  Loading wallets...
+                  Loading accounts...
                 </div>
               ) : (
                 <>
                   <select
-                    name="wallet_id"
-                    value={formData.wallet_id}
+                    name="account_id"
+                    value={formData.account_id}
                     onChange={handleChange}
                     required
                     className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3.5 text-sm sm:text-base bg-light-100 dark:bg-dark-800/50 border border-light-300 dark:border-dark-700 rounded-lg sm:rounded-xl text-light-900 dark:text-dark-50 transition-all duration-300 focus:outline-none focus:border-primary-400 dark:focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 focus:bg-white dark:focus:bg-dark-800 hover:border-light-400 dark:hover:border-dark-600 appearance-none cursor-pointer"
                   >
-                    <option value="">Select wallet</option>
-                    {wallets.map((wallet) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.icon || '💳'} {wallet.name} {wallet.is_default ? '(Default)' : ''}
+                    <option value="">Select account</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.icon || '💳'} {account.name}
                       </option>
                     ))}
                   </select>

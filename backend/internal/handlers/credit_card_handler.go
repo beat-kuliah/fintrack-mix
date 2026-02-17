@@ -21,7 +21,13 @@ type CreateCreditCardRequest struct {
 	CardName        string  `json:"card_name" binding:"required"`
 	LastFourDigits  string  `json:"last_four_digits" binding:"required,len=4"`
 	CreditLimit     float64 `json:"credit_limit" binding:"required,gt=0"`
-	CurrentBalance  float64 `json:"current_balance"`
+	BillingDate     int     `json:"billing_date" binding:"required,gte=1,lte=31"`
+	PaymentDueDate  int     `json:"payment_due_date" binding:"required,gte=1,lte=31"`
+}
+
+type UpdateCreditCardRequest struct {
+	CardName        string  `json:"card_name" binding:"required"`
+	CreditLimit     float64 `json:"credit_limit" binding:"required,gt=0"`
 	BillingDate     int     `json:"billing_date" binding:"required,gte=1,lte=31"`
 	PaymentDueDate  int     `json:"payment_due_date" binding:"required,gte=1,lte=31"`
 }
@@ -40,7 +46,7 @@ func (h *CreditCardHandler) Create(c *gin.Context) {
 		CardName:       req.CardName,
 		LastFourDigits: req.LastFourDigits,
 		CreditLimit:    req.CreditLimit,
-		CurrentBalance: req.CurrentBalance,
+		CurrentBalance: 0, // Balance will be calculated from transactions
 		BillingDate:    req.BillingDate,
 		PaymentDueDate: req.PaymentDueDate,
 	}
@@ -111,4 +117,45 @@ func (h *CreditCardHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Credit card deleted successfully"})
+}
+
+func (h *CreditCardHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credit card ID"})
+		return
+	}
+
+	// Check if card exists and belongs to user
+	card, err := h.cardRepo.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Credit card not found"})
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+	if card.UserID != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
+	var req UpdateCreditCardRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Update card fields (preserve ID, UserID, LastFourDigits, CreatedAt, CurrentBalance)
+	// CurrentBalance is calculated from transactions, not manually updated
+	card.CardName = req.CardName
+	card.CreditLimit = req.CreditLimit
+	card.BillingDate = req.BillingDate
+	card.PaymentDueDate = req.PaymentDueDate
+
+	if err := h.cardRepo.Update(card); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update credit card"})
+		return
+	}
+
+	c.JSON(http.StatusOK, card)
 }

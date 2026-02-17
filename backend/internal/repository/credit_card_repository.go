@@ -56,13 +56,20 @@ func (r *CreditCardRepository) GetByID(id uuid.UUID) (*models.CreditCard, error)
 
 func (r *CreditCardRepository) Update(card *models.CreditCard) error {
 	card.UpdatedAt = time.Now()
-	query := `UPDATE credit_cards SET card_name = $1, credit_limit = $2, current_balance = $3, billing_date = $4, payment_due_date = $5, updated_at = $6 WHERE id = $7`
-	_, err := r.db.Exec(query, card.CardName, card.CreditLimit, card.CurrentBalance, card.BillingDate, card.PaymentDueDate, card.UpdatedAt, card.ID)
+	// Don't update current_balance - it should be calculated from transactions
+	query := `UPDATE credit_cards SET card_name = $1, credit_limit = $2, billing_date = $3, payment_due_date = $4, updated_at = $5 WHERE id = $6`
+	_, err := r.db.Exec(query, card.CardName, card.CreditLimit, card.BillingDate, card.PaymentDueDate, card.UpdatedAt, card.ID)
 	return err
 }
 
 func (r *CreditCardRepository) Delete(id uuid.UUID) error {
 	query := `DELETE FROM credit_cards WHERE id = $1`
 	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *CreditCardRepository) UpdateBalance(id uuid.UUID, amount float64) error {
+	query := `UPDATE credit_cards SET current_balance = current_balance + $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.Exec(query, amount, time.Now(), id)
 	return err
 }

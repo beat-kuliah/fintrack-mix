@@ -38,7 +38,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
 	accountHandler := handlers.NewAccountHandler(accountRepo)
-	transactionHandler := handlers.NewTransactionHandler(transactionRepo, accountRepo)
+	transactionHandler := handlers.NewTransactionHandler(transactionRepo, accountRepo, creditCardRepo)
 	budgetHandler := handlers.NewBudgetHandler(budgetRepo)
 	creditCardHandler := handlers.NewCreditCardHandler(creditCardRepo)
 	goldHandler := handlers.NewGoldHandler(goldRepo)
@@ -101,6 +101,7 @@ func main() {
 		transactions.GET("", transactionHandler.GetAll)
 		transactions.GET("/summary", transactionHandler.GetSummary)
 		transactions.GET("/:id", transactionHandler.GetByID)
+		transactions.PUT("/:id", transactionHandler.Update)
 		transactions.DELETE("/:id", transactionHandler.Delete)
 	}
 
@@ -111,6 +112,7 @@ func main() {
 		budgets.GET("", budgetHandler.GetAll)
 		budgets.POST("/copy", budgetHandler.CopyFromMonth)
 		budgets.GET("/:id", budgetHandler.GetByID)
+		budgets.PUT("/:id", budgetHandler.Update)
 		budgets.DELETE("/:id", budgetHandler.Delete)
 	}
 
@@ -120,6 +122,7 @@ func main() {
 		creditCards.POST("", creditCardHandler.Create)
 		creditCards.GET("", creditCardHandler.GetAll)
 		creditCards.GET("/:id", creditCardHandler.GetByID)
+		creditCards.PUT("/:id", creditCardHandler.Update)
 		creditCards.DELETE("/:id", creditCardHandler.Delete)
 	}
 

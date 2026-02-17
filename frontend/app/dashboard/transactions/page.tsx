@@ -79,13 +79,15 @@ export default function TransactionsPage() {
     }
   }
 
-  // Calculate totals
+  // Calculate totals - exclude credit card transactions
+  // Credit card expenses don't reduce cash balance, they only increase debt
+  // Credit card income (payments) don't increase cash balance, they only reduce debt
   const totalIncome = (transactions || [])
-    .filter(t => t.type === 'income')
+    .filter(t => t.type === 'income' && !t.credit_card_id)
     .reduce((sum, t) => sum + t.amount, 0)
 
   const totalExpense = (transactions || [])
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && !t.credit_card_id)
     .reduce((sum, t) => sum + t.amount, 0)
 
   const balance = totalIncome - totalExpense

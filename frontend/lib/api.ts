@@ -177,7 +177,8 @@ class ApiClient {
 
   // Transaction endpoints
   async createTransaction(data: {
-    account_id: string;
+    account_id?: string;
+    credit_card_id?: string;
     type: 'income' | 'expense';
     category: string;
     amount: number;
@@ -212,6 +213,20 @@ class ApiClient {
   async getTransaction(id: string): Promise<Transaction> {
     return this.request<Transaction>(`/api/transactions/${id}`, {
       method: 'GET',
+    });
+  }
+
+  async updateTransaction(id: string, data: {
+    account_id?: string;
+    type?: 'income' | 'expense';
+    category?: string;
+    amount?: number;
+    description?: string;
+    transaction_date?: string;
+  }): Promise<Transaction> {
+    return this.request<Transaction>(`/api/transactions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 
@@ -265,6 +280,18 @@ class ApiClient {
     });
   }
 
+  async updateBudget(id: string, data: {
+    category: string;
+    amount: number;
+    budget_month: number;
+    budget_year: number;
+  }): Promise<Budget> {
+    return this.request<Budget>(`/api/budgets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async deleteBudget(id: string): Promise<{ message: string }> {
     return this.request<{ message: string }>(`/api/budgets/${id}`, {
       method: 'DELETE',
@@ -294,7 +321,6 @@ class ApiClient {
     card_name: string;
     last_four_digits: string;
     credit_limit: number;
-    current_balance?: number;
     billing_date: number;
     payment_due_date: number;
   }): Promise<CreditCard> {
@@ -307,6 +333,18 @@ class ApiClient {
   async getCreditCard(id: string): Promise<CreditCard> {
     return this.request<CreditCard>(`/api/credit-cards/${id}`, {
       method: 'GET',
+    });
+  }
+
+  async updateCreditCard(id: string, data: {
+    card_name: string;
+    credit_limit: number;
+    billing_date: number;
+    payment_due_date: number;
+  }): Promise<CreditCard> {
+    return this.request<CreditCard>(`/api/credit-cards/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 
@@ -390,7 +428,8 @@ export interface Account {
 export interface Transaction {
   id: string;
   user_id: string;
-  account_id: string;
+  account_id?: string;
+  credit_card_id?: string;
   type: 'income' | 'expense';
   category: string;
   amount: number;
