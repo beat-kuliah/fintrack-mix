@@ -96,7 +96,8 @@ export default function Sidebar({ isMobileOpen: externalIsMobileOpen, setIsMobil
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 glass border-r border-light-200 dark:border-dark-800 z-40
+          fixed top-0 left-0 h-full w-64 border-r border-light-200 dark:border-dark-800 z-40
+          bg-white dark:bg-dark-900
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -173,8 +174,8 @@ export default function Sidebar({ isMobileOpen: externalIsMobileOpen, setIsMobil
             })}
           </nav>
 
-          {/* User Profile & Logout */}
-          <div className="p-4 border-t border-light-200 dark:border-dark-800 space-y-2">
+          {/* User Profile & Logout - Hidden on mobile (moved to header dropdown) */}
+          <div className="hidden lg:block p-4 border-t border-light-200 dark:border-dark-800 space-y-2">
             {/* User Info */}
             {user && (
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-light-100/50 dark:bg-dark-800/50">
